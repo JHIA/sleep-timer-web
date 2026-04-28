@@ -13,42 +13,29 @@
 (function () {
   "use strict";
 
-  function logicSetTimer() {
-    let countdownInterval = null;
+  let countdownInterval = null;
 
-    function getDuration() {
-      let time = parseInt(prompt("Sleep in how many minutes?"));
-      let duration = time * 60;
-      return duration;
+  function startCountdown(timerSet) {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
     }
+    let timeLeft = timerSet * 60;
 
-    function closeTab() {
-      try {
-        window.location.href = "about:blank";
-        window.close();
-      } catch (e) {
-        console.log("Redirect method failed...");
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        pause();
       }
-    }
+    }, 1000);
+  }
 
-    function startCountdown() {
-      let fixedDuration = getDuration();
-      let timeLeft = fixedDuration;
-
-      countdownInterval = setInterval(() => {
-        timeLeft--;
-
-        if (timeLeft <= 0) {
-          clearInterval(countdownInterval);
-          closeTab();
-        }
-      }, 1000);
-    }
-
-    if (window.top === window.self) {
-      console.log("Extension sleep timer is active");
-      startCountdown();
-    }
+  function pause() {
+    const media = document.querySelectorAll("video, audio");
+    media.forEach((m) => {
+      m.pause();
+    });
   }
 
   function createTimerMenuItem() {
@@ -61,17 +48,12 @@
     );
 
     if (parentMenu) {
-      // Gunakan DIV biasa agar tidak memicu internal logic 'ytmusic-menu-navigation-item-renderer'
-      // Tapi kita beri class yang sama agar style CSS-nya tetap asli
       const newItem = document.createElement("div");
       newItem.id = MENU_ID;
       newItem.setAttribute("role", "menuitem");
       newItem.setAttribute("tabindex", "-1");
-      // newItem.setAttribute("aria-disabled", "false");
-      // newItem.setAttribute("aria-selected", "false");
       newItem.className = "style-scope ytmusic-menu-popup-renderer";
 
-      // Tambahkan CSS agar hover effect-nya sama dengan menu lain
       newItem.style.cssText = `
                 cursor: pointer;
                 height: 48px;
@@ -100,7 +82,7 @@
       iconWrap.setAttribute("id", "icon-wrap");
       iconWrap.className =
         "icon style-scope ytmusic-menu-service-item-renderer";
-      // Tambahkan margin agar ada jarak dengan teks "Timer tidur"
+
       iconWrap.style.cssText = "width: 18px; height: 18px; flex: none;";
 
       const svgNS = "http://www.w3.org/2000/svg";
@@ -140,30 +122,16 @@
 
       // 4. Logika Click
       newItem.onclick = (e) => {
-        logicSetTimer();
-        // e.stopPropagation(); // Mencegah menu menutup terlalu cepat
-        // const minutes = prompt("Matikan musik dalam berapa menit?", "30");
+        // logicSetTimer();
+        popUpSetTimer();
 
-        // if (minutes && !isNaN(minutes)) {
-        //   const ms = parseInt(minutes) * 60 * 1000;
-        //   alert(`Timer aktif: Musik akan berhenti dalam ${minutes} menit.`);
-
-        //   // Tutup menu secara manual dengan klik background
-        //   document.body.click();
-
-        //   setTimeout(() => {
-        //     const playButton = document.querySelector(".play-pause-button");
-        //     // Pause hanya jika musik sedang jalan
-        //     if (
-        //       playButton &&
-        //       (playButton.getAttribute("aria-label")?.includes("Pause") ||
-        //         playButton.title?.includes("Pause"))
-        //     ) {
-        //       playButton.click();
-        //       console.log("Sleep Timer: Musik dihentikan.");
-        //     }
-        //   }, ms);
-        // }
+        const dropdown = document.querySelectorAll(
+          "tp-yt-iron-dropdown.style-scope.ytmusic-popup-container",
+        );
+        dropdown.forEach((drop) => {
+          if (!drop.opened) return;
+          drop.opened = false;
+        });
       };
 
       // Menghilangkan item menu download
@@ -174,6 +142,110 @@
 
       parentMenu.appendChild(newItem);
     }
+  }
+
+  function popUpSetTimer() {
+    // Element PopUp
+    const myPopupNew = document.createElement("div");
+    myPopupNew.id = "myPopupNew";
+    myPopupNew.setAttribute("role", "dialog");
+    myPopupNew.setAttribute("tabindex", "-1");
+    myPopupNew.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-sizing: border-box;
+        max-height: 867px;
+        max-width: 332px;
+        z-index: 105;
+        background: #212121;
+        color: white;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        font-family: Roboto, sans-serif;
+      `;
+
+    const area = document.createElement("div");
+    area.id = "popUpArea";
+    area.style.margin = "6px 16px";
+
+    // Title
+    const title = document.createElement("h2");
+    title.textContent = "Timer tidur";
+    title.style.marginBottom = "12px";
+    title.style.fontSize = "16px";
+    title.style.fontWeight = "normal";
+
+    const content = document.createElement("div");
+    content.setAttribute("id", "button-timer");
+    content.style.cssText = `
+        margin-left : 20px;
+        margin-right : 30px;
+      `;
+
+    const ul = document.createElement("ul");
+    ul.style.listStyleType = "none";
+
+    const dataList = [
+      { label: "5 Menit", value: "5" },
+      { label: "10 Menit", value: "10" },
+      { label: "15 Menit", value: "15" },
+      { label: "30 Menit", value: "30" },
+    ];
+
+    dataList.forEach((item) => {
+      const li = document.createElement("li");
+
+      const btn = document.createElement("button");
+      btn.style.cssText = `
+          border: none;
+          background: none;
+          color: white;
+          font-weight: normal;
+          padding: 10px 0px;
+        `;
+      btn.textContent = item.label;
+      btn.dataset.minutes = item.value;
+
+      btn.addEventListener("click", (e) => {
+        const minutes = parseInt(e.currentTarget.dataset.minutes);
+        if (isNaN(minutes)) return;
+        startCountdown(minutes);
+        myPopupNew.remove();
+      });
+
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Tutup";
+    closeBtn.style.cssText = `
+        border: none;
+        background: none;
+        color: white;
+        font-weight: normal;
+      `;
+    closeBtn.addEventListener("click", () => {
+      myPopupNew.remove();
+    });
+
+    const containerBtnClose = document.createElement("div");
+    containerBtnClose.style.cssText = `
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+      `;
+    containerBtnClose.appendChild(closeBtn);
+
+    content.appendChild(ul);
+    area.appendChild(title);
+    area.appendChild(content);
+    myPopupNew.appendChild(area);
+    myPopupNew.appendChild(containerBtnClose);
+    document.body.appendChild(myPopupNew);
   }
 
   // Observer untuk mendeteksi kemunculan menu popup
