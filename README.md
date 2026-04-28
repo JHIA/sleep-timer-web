@@ -28,12 +28,12 @@ The script integrates seamlessly with YouTube Music, allowing you to set sleep t
 ### Timer Options Menu
 Here's the sleep timer interface showing different time duration options:
 
-![Sleep Timer Menu](screenshoot/ytm-1crp.jpeg)
+<img src="screenshoot/ytm-1crp.jpeg" width="500" alt="Sleep Timer Menu">
 
 ### Menu Integration
 The timer option is integrated into YouTube Music's menu for easy access:
 
-![YouTube Music Menu](screenshoot/ytm-2crp.jpeg)
+<img src="screenshoot/ytm-2crp.jpeg" width="500" alt="YouTube Music Menu">
 
 ---
 
